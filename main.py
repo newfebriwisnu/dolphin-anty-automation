@@ -11,20 +11,34 @@ HOST = os.getenv("HOST")
 PORT = os.getenv("PORT")
 AUTH_TOKEN = os.getenv("AUTH_TOKEN")
 
+
 def log(message):
     print(f"[{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}] {message}")
-    
+
+
 def get_profile(profile_id=""):
-    headers = {"Authorization" : AUTH_TOKEN}
-    response = requests.get(f"https://dolphin-anty-api.com/browser_profiles/{profile_id}", headers=headers)
+    headers = {"Authorization": AUTH_TOKEN}
+    response = requests.get(
+        f"https://dolphin-anty-api.com/browser_profiles/{profile_id}", headers=headers)
     result = json.loads(response.text)
     return result
+
 
 def start_profile(profile_id):
     return f"http://{HOST}:{PORT}/v1.0/browser_profiles/{profile_id}/start?automation=1"
 
+
 def stop_profile(profile_id):
     return f"http://{HOST}:{PORT}/v1.0/browser_profiles/{profile_id}/stop"
+
+
+def remote_profile(remote_host, remote_port):
+    options = webdriver.ChromeOptions()
+    options.add_experimental_option(
+        "debuggerAddress", f"{remote_host}:{remote_port}")
+    driver = webdriver.Chrome(service=ChromeService(
+        ChromeDriverManager(chrome_type="chromium").install()), options=options)
+    return driver
 
 
 list_profile = []
@@ -43,7 +57,7 @@ log(f"Selected profile: {profile_id} - {profile_name}")
 response = requests.get(start_profile(profile_id))
 result = json.loads(response.text)
 log(result)
-    
+
 try:
     remote_host = HOST
     remote_port = result["automation"]["port"]
@@ -51,11 +65,8 @@ except:
     input("Press enter to exit")
     exit()
 
-options = webdriver.ChromeOptions()
-options.add_experimental_option("debuggerAddress", f"{remote_host}:{remote_port}")
-
 log("Starting chrome driver")
-driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager(chrome_type="chromium").install()), options=options)
+driver = remote_profile(remote_host, remote_port)
 
 time.sleep(3)
 driver.get('https://github.com/newfebriwisnu')
